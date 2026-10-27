@@ -1,0 +1,230 @@
+<!doctype html>
+<!--
+=============================================================================
+COSMIO: A Benchmark for Cross-Survey Modality Imputation
+
+Copyright (c) 2026 Futurewei Technologies, Inc.
+
+SPDX-License-Identifier: MIT
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+=============================================================================
+-->
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Official repository for the NeurIPS 2026 paper COSMIO: A Benchmark for Cross-Survey Modality Imputation.">
+  <title>COSMIO: A Benchmark for Cross-Survey Modality Imputation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="readme">
+    <header class="paper-header">
+      <h1>COSMIO: A Benchmark for<br>Cross-Survey Modality Imputation</h1>
+      <div class="badges" aria-label="Project metadata">
+        <span class="badge"><b>paper</b><i>NeurIPS 2026</i></span>
+        <span class="badge"><b>code</b><i>AsynDiff</i></span>
+        <span class="badge"><b>data</b><i>LSST · Euclid · Roman</i></span>
+        <span class="badge"><b>license</b><i>MIT</i></span>
+      </div>
+      <p><strong>Official repository for the NeurIPS 2026 paper.</strong></p>
+      <p class="abstract"><strong>COSMIO studies how to reconstruct a missing astronomical survey observation from the surveys that are available, and whether those reconstructions remain useful for rare-event science.</strong></p>
+      <p class="project-links">
+        <a href="https://github.com/fw-ic/COSMIO">Official code</a>
+        <span>·</span>
+        <a href="https://www.kaggle.com/datasets/cosmidata/cosmio">Full dataset</a>
+        <span>·</span>
+        <a href="https://kaggle.com/datasets/e008bbba31a8658c308ae305ec93297017c00747454138005c9b8ae2acb5e7c1">Sample dataset</a>
+      </p>
+    </header>
+
+    <figure class="main-figure">
+      <img src="assets/cosmio-teaser.png" alt="COSMIO benchmark overview">
+      <figcaption>COSMIO aligns LSST, Euclid, and Roman observations, trains an imputation model on overlapped regions, evaluates transfer to rare events, and measures downstream Roman lens classification.</figcaption>
+    </figure>
+
+    <section>
+      <h2>TL;DR</h2>
+      <p>Large sky surveys differ in wavelength coverage, resolution, noise, and footprint. Their partial overlap leaves many objects without observations in one or more surveys. COSMIO formalizes this setting as <strong>cross-survey modality imputation</strong> and provides aligned, forward-rendered observations for <strong>115,000 regular galaxies</strong> and <strong>14,825 galaxy-galaxy strong lenses</strong>.</p>
+      <p>This official release contains the COSMIO data protocol, <strong>AsynDiff as the only distributed imputation implementation</strong>, and the complete downstream Roman strong-lens classification pipeline.</p>
+    </section>
+
+    <section>
+      <h2>Highlights</h2>
+      <ul>
+        <li><strong>Cross-survey benchmark:</strong> aligned LSST, Euclid, and Roman views with realistic survey-specific rendering.</li>
+        <li><strong>Regular-to-rare evaluation:</strong> train on common galaxies and evaluate distribution shift on strong-lensing systems.</li>
+        <li><strong>Downstream science:</strong> test whether imputed Roman observations support strong-lens classification.</li>
+        <li><strong>Focused source release:</strong> reproducible COSMIO readers, AsynDiff training and inference, metrics, manifests, and classifier code.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Contents</h2>
+      <p class="contents">
+        <a href="#benchmark">The benchmark</a> ·
+        <a href="#data">Data</a> ·
+        <a href="#installation">Installation</a> ·
+        <a href="#asyndiff">AsynDiff</a> ·
+        <a href="#classification">Downstream classification</a> ·
+        <a href="#layout">Repository layout</a> ·
+        <a href="#citation">Citation</a>
+      </p>
+    </section>
+
+    <section id="benchmark">
+      <h2>The benchmark</h2>
+      <p>Given observations of an astrophysical source in one or more surveys, the task is to infer how the same source would appear in a missing target survey. COSMIO evaluates both reconstruction quality and scientific utility.</p>
+      <table>
+        <thead><tr><th>Track</th><th>Training / inputs</th><th>Evaluation</th></tr></thead>
+        <tbody>
+          <tr><td>Cross-survey imputation</td><td>Regular galaxies with aligned survey views</td><td>RMSE, PSNR, and fair CRPS on missing modalities</td></tr>
+          <tr><td>Rare-event generalization</td><td>Model trained on regular galaxies</td><td>Strong-lensing systems without rare-event retraining</td></tr>
+          <tr><td>Downstream classification</td><td>Real or AsynDiff-imputed Roman observations</td><td>Roman lens vs. non-lens classification</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>CRPS convention</h2>
+      <p>The final NeurIPS 2026 protocol uses fair CRPS: the pairwise spread term
+      is divided by <code>M(M-1)</code>, with a factor of one half, for
+      <code>M &gt;= 2</code> independent draws. Training validation and evaluation
+      share this implementation. Earlier scores using <code>M²</code> must be
+      recomputed from ensemble draws or rerun before comparison.</p>
+    </section>
+
+    <section>
+      <h2>Arc extent evaluation</h2>
+      <p>Ground truth and prediction retain all arc components that pass their
+      existing extraction filters (union). Largest-only prediction selection is
+      not supported. Clean-source ground truth and full-observation predictions
+      retain their respective extraction procedures.</p>
+      <p>Every angular extent error (AEE) table must show valid-pair coverage
+      alongside conditional AEE: the number of examples with both arcs detected
+      divided by all evaluated examples, for example <code>2 / 4 (50%)</code>.
+      Prediction-only detection rate is reported separately.</p>
+    </section>
+
+    <section id="data">
+      <h2>Data</h2>
+      <p>Download the COSMIO benchmark datasets using the project-provided Kaggle links above.</p>
+      <p>The benchmark uses aligned objects rendered under three survey configurations. Readers preserve native channels, shared identifiers, deterministic splits, and normalization metadata.</p>
+      <img class="data-figure" src="assets/data-sample.png" alt="Common and rare COSMIO examples across surveys">
+      <table>
+        <thead><tr><th>Survey</th><th>Channels</th><th>Native size</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>LSST</td><td>5</td><td>32 × 32</td><td>Ground-based source modality</td></tr>
+          <tr><td>Euclid</td><td>1</td><td>64 × 64</td><td>Space-based source modality</td></tr>
+          <tr><td>Roman</td><td>3</td><td>59 × 59</td><td>Target and downstream modality</td></tr>
+        </tbody>
+      </table>
+      <pre><code>data/
+├── regular/
+│   ├── run_000/shards/manifest_lre_nonlens.json
+│   └── normalization_metadata.json
+└── lens/
+    ├── run_000/shards/manifest_lens.json
+    └── normalization_metadata.json</code></pre>
+    </section>
+
+    <section id="installation">
+      <h2>Installation</h2>
+      <p>Python 3.10 or newer is required.</p>
+      <pre><code>git clone https://github.com/fw-ic/COSMIO.git
+cd COSMIO
+
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install -r requirements.txt
+python -m pip install -e asyn-diffusion
+python -m pip install -e vit-lens-classification</code></pre>
+    </section>
+
+    <section id="asyndiff">
+      <h2>AsynDiff: train and sample</h2>
+      <p>The released imputation model supports asynchronous masking over LSST, Euclid, and Roman. The default protocol trains on regular-galaxy <code>run_000</code> through <code>run_006</code>; <code>run_007</code> is reserved for downstream protocols.</p>
+      <pre><code># Build the sample index and normalization statistics
+asyndiff_build_index --config asyn-diffusion/configs/train.yaml
+
+# Train
+asyndiff_train_diffusion --config asyn-diffusion/configs/train.yaml
+
+# Reconstruct Roman from LSST + Euclid
+asyndiff_sample \
+  --config asyn-diffusion/configs/train.yaml \
+  --split val \
+  --index 0 \
+  --known lsst,euclid</code></pre>
+    </section>
+
+    <section id="classification">
+      <h2>Downstream Roman classification</h2>
+      <p>The downstream package trains a Roman-only Vision Transformer for strong-lens classification using ground-truth Roman observations or saved AsynDiff reconstructions.</p>
+      <pre><code># Build a real-Roman baseline manifest
+vit_lens_build_real_roman_manifest
+
+# Train and evaluate
+vit_lens_train --config vit-lens-classification/configs/real_roman.yaml
+vit_lens_evaluate --config vit-lens-classification/configs/real_roman.yaml</code></pre>
+      <p>The manifest builder is configured by flags, not by a config file. Its defaults write to <code>vit-lens-classification/artifacts/real_roman_manifest.json</code>, which is the <code>data.manifest_path</code> that <code>configs/real_roman.yaml</code> reads; if you pass <code>--output</code>, update the config to match.</p>
+      <p>For the imputed track, run <code>evaluate_imputation_methods.py</code> with <code>--save-pred-sample-normalized</code> to write the prediction tensors, then build a manifest with <code>vit_lens_build_imputed_roman_manifest --train-results-json &lt;that JSON&gt;</code>.</p>
+      <p>Across all six configurations under <code>vit-lens-classification/configs/</code> only three fields differ &mdash; <code>experiment.name</code>, <code>experiment.output_root</code> and <code>data.manifest_path</code> &mdash; so a configuration selects no experimental variable. The imputation direction is fixed upstream by <code>--known</code>, and the negatives and positives by the builder's <code>--train-negative-source</code> and <code>--eval-source</code>. Set <code>--output</code> to the <code>data.manifest_path</code> of the configuration you intend to train against; nothing checks that the two agree. See the <a href="https://github.com/fw-ic/COSMIO#downstream-roman-classification">README</a> for the full contract.</p>
+    </section>
+
+    <section id="layout">
+      <h2>Repository layout</h2>
+      <pre><code>asyn-diffusion/           AsynDiff model, data protocol, training, inference
+vit-lens-classification/  Roman lens classifier and manifest builders
+docs/                     Data schema and project-page source
+tests/                    Release-scope checks
+evaluate_imputation_methods.py
+evaluate_lensing_arc_metrics.py</code></pre>
+    </section>
+
+    <section>
+      <h2>Release scope and reproducibility</h2>
+      <ul>
+        <li>Other imputation implementations evaluated in the paper are not redistributed.</li>
+        <li>Datasets, checkpoints, predictions, and experiment runs are hosted or generated separately.</li>
+        <li>The repository preserves the complete COSMIO → AsynDiff → Roman classification path.</li>
+        <li>CI checks the released package scope and test suite on each push and pull request.</li>
+      </ul>
+    </section>
+
+    <section id="citation">
+      <h2>Citation</h2>
+      <p>Cite the accompanying NeurIPS 2026 paper when using the benchmark. To reference this official code repository specifically, use:</p>
+      <pre><code>@misc{cosmio2026code,
+  title        = {COSMIO: A Benchmark for Cross-Survey Modality Imputation},
+  year         = {2026},
+  howpublished = {Official code repository},
+  url          = {https://github.com/fw-ic/COSMIO},
+  note         = {Companion code for the NeurIPS 2026 paper}
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>License</h2>
+      <p>Code is released under the terms in <a href="https://github.com/fw-ic/COSMIO/blob/main/LICENSE">LICENSE</a>. Dataset usage follows the terms published with the Kaggle release.</p>
+    </section>
+  </main>
+</body>
+</html>

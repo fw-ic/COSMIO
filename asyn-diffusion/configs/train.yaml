@@ -1,0 +1,99 @@
+# =============================================================================
+# COSMIO: A Benchmark for Cross-Survey Modality Imputation
+#
+# Copyright (c) 2026 Futurewei Technologies, Inc.
+#
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# =============================================================================
+
+experiment:
+  name: default
+  output_root: asyn-diffusion/run
+  seed: 1337
+
+data:
+  data_root: data/regular
+  target_group: images
+  resize: 64
+  num_workers: 16
+  pin_memory: true
+  train_count: 90000
+  val_count: 9000
+  test_count: 0
+  selected_runs:
+    - run_000
+    - run_001
+    - run_002
+    - run_003
+    - run_004
+    - run_005
+    - run_006
+  index_path: asyn-diffusion/artifacts/sample_index.json
+  stats_path: asyn-diffusion/artifacts/channel_stats.json
+  visualization_subset_path: asyn-diffusion/artifacts/visualization_subset.json
+  augment_flip_prob: 0.0
+  augment_noise_prob: 0.0
+  augment_scale_prob: 0.0
+
+model:
+  head_mode: single
+  in_channels: 9
+  out_channels: 9
+  base_channels: 64
+  channel_mults: [1, 2, 4]
+  num_res_blocks: 2
+  time_dim: 256
+  num_modalities: 3
+
+diffusion:
+  timesteps: 1000
+  beta_schedule: linear
+  beta_start: 1.0e-4
+  beta_end: 2.0e-2
+  objective: eps
+  clip_x0: true
+
+train:
+  epochs: 100
+  batch_size: 128
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  log_every: 20
+  val_every: 10
+  max_train_batches: null
+
+evaluation:
+  visualization_splits: [val]
+  visualization_split: val
+  visualization_size: 8
+  max_val_batches: 8
+  visualization_known_modalities:
+    - lsst
+    - euclid
+  known_combinations:
+    - [lsst, euclid]
+    - [lsst]
+    - [euclid]
+  num_crps_samples: 5
+  inference_steps: 50
+  fix_mode: noised
+  ddim_eta: 1.0
+

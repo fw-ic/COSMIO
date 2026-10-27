@@ -1,0 +1,61 @@
+# =============================================================================
+# COSMIO: A Benchmark for Cross-Survey Modality Imputation
+#
+# Copyright (c) 2026 Futurewei Technologies, Inc.
+#
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# =============================================================================
+
+experiment:
+  name: imputed_roman_imputed_nonlens
+  output_root: vit-lens-classification/runs
+
+data:
+  manifest_path: vit-lens-classification/artifacts/imputed_roman_imputed_nonlens_manifest.json
+  image_size: 224
+  num_workers: 4
+
+model:
+  in_channels: 3
+  image_size: 224
+  patch_size: 16
+  num_layers: 6
+  num_heads: 8
+  hidden_dim: 256
+  mlp_dim: 512
+  dropout: 0.0
+  attention_dropout: 0.0
+
+train:
+  seed: 1337
+  batch_size: 64
+  epochs: 10
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+  balanced_sampling: true
+  max_train_steps: null
+  max_eval_batches: null
+  checkpoint_every_epochs: 5
+  device: auto
+
+evaluation:
+  split: eval
+  threshold: 0.5
+
